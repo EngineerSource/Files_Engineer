@@ -194,6 +194,57 @@ return false
 end
 end
 ------------------------------------------------------------------------
+if text == 'روليت' then
+if not database:get(bot_id..'Abs:Lock:Games'..msg.chat_id_) then
+database:del(bot_id.."Abs:NumRolet"..msg.chat_id_..msg.sender_user_id_) 
+database:del(bot_id..'Abs:ListRolet'..msg.chat_id_)  
+database:setex(bot_id.."Abs:StartRolet"..msg.chat_id_..msg.sender_user_id_,3600,true)  
+send(msg.chat_id_, msg.id_, 1, '⌁︙حسنا لنلعب , ارسل عدد اللاعبين للروليت .', 1, 'md')
+return false  
+end
+end
+if text and text:match("^(%d+)$") and database:get(bot_id.."Abs:StartRolet"..msg.chat_id_..msg.sender_user_id_) then
+if text == "1" then
+Text = "⌁︙لا استطيع بدء اللعبه بلاعب واحد فقط"
+else
+database:set(bot_id.."Abs:NumRolet"..msg.chat_id_..msg.sender_user_id_,text)  
+Text = '⌁︙تم بدء تسجيل اللسته يرجى ارسال المعرفات \n⌁︙الفائز يحصل على 5 نقاط عدد المطلوبين ↫ '..text..' لاعب'
+end
+database:del(bot_id.."Abs:StartRolet"..msg.chat_id_..msg.sender_user_id_)
+send(msg.chat_id_,msg.id_,Text)
+return false
+end
+if text and text:match('^(@[%a%d_]+)$') and database:get(bot_id.."Abs:NumRolet"..msg.chat_id_..msg.sender_user_id_) then 
+if database:sismember(bot_id..'Abs:ListRolet'..msg.chat_id_,text) then
+send(msg.chat_id_,msg.id_,'⌁︙المعرف ↫ ['..text..'] موجود اساسا')
+return false
+end
+tdcli_function ({ID = "SearchPublicChat",username_ = text},function(extra, res, success) 
+if res and res.message_ and res.message_ == "USERNAME_NOT_OCCUPIED" then 
+send(msg.chat_id_, msg.id_, 1,'⌁︙المعرف غير صحيح يرجى ارسال معرف صحيح', 1, 'md')
+return false 
+end
+database:sadd(bot_id..'Abs:ListRolet'..msg.chat_id_,text)
+local CountAdd = database:get(bot_id.."Abs:NumRolet"..msg.chat_id_..msg.sender_user_id_)
+local CountAll = database:scard(bot_id..'Abs:ListRolet'..msg.chat_id_)
+local CountUser = CountAdd - CountAll
+if tonumber(CountAll) == tonumber(CountAdd) then 
+database:del(bot_id.."Abs:NumRolet"..msg.chat_id_..msg.sender_user_id_) 
+database:setex(bot_id.."Abs:WittingStartRolet"..msg.chat_id_..msg.sender_user_id_,1400,true) 
+local Text = "⌁︙تم ادخال المعرف ↫ ["..text.."]\n⌁︙وتم اكتمال العدد الكلي هل انت مستعد ؟"
+keyboard = {} 
+keyboard.inline_keyboard = {{{text="نعم",callback_data="/YesRolet"},{text="لا",callback_data="/NoRolet"}},{{text="اللاعبين",callback_data="/ListRolet"}}} 
+Msg_id = msg.id_/2097152/0.5
+return https.request("https://api.telegram.org/bot"..TokenBot..'/sendMessage?chat_id='..msg.chat_id_..'&text=' .. URL.escape(Text).."&reply_to_message_id="..Msg_id.."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+end 
+local Text = "⌁︙تم ادخال المعرف ↫ ["..text.."] وتبقى ↫ "..CountUser.." لاعبين ليكتمل العدد ارسل المعرف الاخر"
+keyboard = {} 
+keyboard.inline_keyboard = {{{text="الغاء",callback_data="/NoRolet"}}} 
+Msg_id = msg.id_/2097152/0.5
+return https.request("https://api.telegram.org/bot"..TokenBot..'/sendMessage?chat_id='..msg.chat_id_..'&text=' .. URL.escape(Text).."&reply_to_message_id="..Msg_id.."&parse_mode=markdown&disable_web_page_preview=true&reply_markup="..JSON.encode(keyboard))
+end,nil) 
+end
+------------------------------------------------------------------------
 if text == ''..(database:get(bot_id..'Klam:Speed'..msg.chat_id_) or '')..'' and not database:get(bot_id..'Speed:Tr'..msg.chat_id_) then
 if not database:get(bot_id..'Speed:Tr'..msg.chat_id_) then 
 send(msg.chat_id_, msg.id_,' ✯︙الف مبروك لقد فزت \n ✯︙للعب مره اخره ارسل »{ الاسرع , ترتيب }')
